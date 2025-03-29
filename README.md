@@ -12,5 +12,5 @@ A C++-based blockchain platform with a hybrid Proof-of-Stake model, DAO governan
 ## Build Instructions
 1. Clone the repository:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/Emmanuel-Odero/nilotic-network.git
    cd Nilotic-Network
