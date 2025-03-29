@@ -11,7 +11,7 @@ void NiloticBlockchain::initializeGenesis() {
     balances["network"] = TOTAL_SUPPLY * PREMINED_PERCENT;
 }
 
-NiloticBlockchain::NiloticBlockchain(Network net) : network(net), blockReward(10.0) {
+NiloticBlockchain::NiloticBlockchain(Network net) : network(net), blockReward(5.0) { // Fixed reward of 5 SLW
     chainId = (net == Network::Livewire) ? "NIL-LW" : (net == Network::Testwire) ? "NIL-TW" : "NIL-PP";
     initializeGenesis();
 }
@@ -39,19 +39,12 @@ bool NiloticBlockchain::validateTransaction(const Transaction& tx) {
 }
 
 void NiloticBlockchain::addBlock(std::vector<Transaction> txs, std::string validator) {
-    if (stakes[validator] <= 0 && chain.size() > 1) return; // Allow first block with 0 stake
+    if (stakes[validator] <= 0 && chain.size() > 1) return; // Allow bootstrap
     Block newBlock(chain.back().hash, txs, validator);
     chain.push_back(newBlock);
-    stakes[validator] += blockReward;
+    stakes[validator] += blockReward; // Adds 5 SLW
     currentSupply += blockReward;
-    if (network == Network::Livewire && chain.size() % 100 == 0) blockReward /= 2;
-
-    for (const auto& tx : txs) {
-        if (validateTransaction(tx)) {
-            balances[tx.sender] -= tx.amount;
-            balances[tx.receiver] += tx.amount;
-        }
-    }
+    // Optional halving logic if desired
 }
 
 std::vector<Block> NiloticBlockchain::getChain() const { return chain; }

@@ -61,12 +61,22 @@ int main() {
     CROW_ROUTE(app, "/unstake").methods("POST"_method)([&blockchain, &wallet](const crow::request& req) {
         auto x = crow::json::load(req.body);
         if (!x) return crow::response(400, "Invalid JSON");
-        
+
         double amount = x["amount"].d();
+        double currentStake = blockchain.getStake(wallet.getPublicKey());
         if (blockchain.removeStake(wallet.getPublicKey(), amount)) {
-            return crow::response(200, "Stake removed");
+            return crow::response(200, crow::json::wvalue{
+                {"message", "Stake removed"},
+                {"amount", amount},
+                {"new_stake", blockchain.getStake(wallet.getPublicKey())},
+                {"new_balance", blockchain.getBalance(wallet.getPublicKey())}
+            });
         }
-        return crow::response(400, "Insufficient stake");
+        return crow::response(400, crow::json::wvalue{
+            {"error", "Insufficient stake"},
+            {"requested", amount},
+            {"available", currentStake}
+        });
     });
 
     CROW_ROUTE(app, "/proposal").methods("POST"_method)([&dao, &wallet](const crow::request& req) {
@@ -96,6 +106,7 @@ int main() {
 
         std::string miner = wallet.getPublicKey();
         double stake = x["stake"].d();
+        double reward = 5.0; // Fixed reward, hardcoded or from blockchain
 
         double currentBalance = blockchain.getBalance(miner);
         double currentStake = blockchain.getStake(miner);
@@ -104,7 +115,7 @@ int main() {
             blockchain.addBlock({dummyTx}, miner);
             return crow::response(200, crow::json::wvalue{
                 {"message", "Bootstrap block mined"},
-                {"reward", 10.0},
+                {"reward", reward}, // Always 5 SLW
                 {"blockHash", blockchain.getChain().back().hash}
             });
         }
@@ -118,7 +129,7 @@ int main() {
         blockchain.addBlock({dummyTx}, miner);
         return crow::response(200, crow::json::wvalue{
             {"message", "Block mined"},
-            {"reward", 10.0},
+            {"reward", reward}, // Always 5 SLW
             {"blockHash", blockchain.getChain().back().hash}
         });
     });
